@@ -1,0 +1,200 @@
+---
+title: "Statistical inference with the GSS data"
+output: 
+  html_document: 
+    fig_height: 4
+    highlight: pygments
+    theme: spacelab
+---
+
+## Setup
+
+### Load packages
+
+```{r load-packages, message = FALSE}
+library(ggplot2)
+library(dplyr)
+library(statsr)
+```
+
+### Load data
+
+```{r load-data}
+load("/Users/catherinehata/Desktop/Inferential Statistics/Week 5/gss.Rdata")
+```
+
+
+
+* * *
+
+## Part 1: Data
+
+Since 1972, the General Social Survey (GSS) has been collecting data on the contemporary American society in an attempt to follow the flow of social changes and identify/ understand emerging trends that come with these changes. To achieve this aim, the GSS contains a diverse range of information related to the general demographic as well as questions that are relevant to contemporary issues that span multiple categories, from behavioral, attitudinal, to social beliefs on various topics. These topics include civil liberties, social mobility, government functions, intergroup tolerance, physical and mental health, and income equality. Since the intention of the GSS is purely to gather data and provide them to any interested party, with minimal cost, the method conducted by the GSS is mainly random sampling, and thus serves the purpose of generalization. There is no social experiment conducted by the GSS and no random assignment is involved. Hence, there is no causal relation that can be established from GSS data. 
+
+[About the GSS][http://gss.norc.org/About-The-GSS]
+* * *
+
+## Part 2: Research question
+
+Within the last couple years, there has been much attention and focus on the problems faced by the millennials who, according to PewResearchCenter, are typically born after 1980 and the first generation to come of age in the new millennium. Besides the concern for these young adults regarding the increasing debts acquired from rising college tuitions upon graduation, there has also been concern for the shortage of employment opportunities as well as the disparity between salary and education level. There are potentially different reasons why the millennial generation faces the problems that they do: income disparity, the disappearance of the middle class, and the prominence of the tech industry in society, which leads to certain majors being favored over others when it comes to better job opportunities and higher pays. These concerns have been raised by various politicians, who list the solutions for them as major goals in their campaign during this presidential election season of 2016. Thus, we would like to use concrete data to explore how the rise of the tech industry has transformed society over the years and whether young people indeed are growing increasingly unhappy with the economy and the employment situation they find themselves in when they graduate. 
+
+We are interested in the attitude as well as the outlook towards employment opportunities of the national workforce whose age is between 18 and 35. This group of young employees will be mentioned as the "young professionals" for the entirety of this study for the reason that they are most likely newer to the workforce and less experienced than most employees who are above 35. More specifically, we want to explore whether the percentage of American young professionals who are dissatisfied with their jobs has changed at all with the continuously-expanding tech industry, which we can safely suppose to have created and offered more job opportunities. For the sake of simplicity without deviating away too much from historical accuracy, we will assume the tech industry has only come into prominence within the past 30 years (from 2016). In other words, we examine the GSS data obtained from the year 1987 and the year 2012 and strive to address the question of whether the young professionals in 2012 are less/ more/ or just as likely to find their jobs unsatisfying as the young professionals in 1987. It is also of particular interest to look at the years 1987 and 2012 because they occur during two different presidencies, Ronald Reagan's and Barack Obama's. One of the 2016 presidential candidate, Donald Trump, attributes much of the employment problems to the public policies that are carried out under President Obama while vowing to bring the US back to its heyday of Reagan's presidency if he is elected. The study might reveal some ideas on the existence and the extent of the problems mentioned by Donald Trump as well as whether society under Reagan's presidency was a indeed better world for young workers.  
+* * *
+
+## Part 3: Exploratory data analysis
+
+The GSS data evaluates the level of satisfaction with the work that a surveyed individual does by using four different descriptions: "Very Satisfied", "Moderately Satisfied", "A Little Dissatisfied", and "Very Dissatisfied". To simplify the notion of job satisfaction, we divide it into two different categories: "Satisfied" and "Dissatisfied". We then add a new column to the dataframe called "Job Satisfaction" where we group the two responses "Very Satisfied" and "Moderately Satisfied" under one category called "Satisfied" while the other two responses "A Little Dissatisfied" and "Very Dissatisfied" are grouped under the category of "Dissatisfied".
+
+```{r}
+gss <- gss %>%
+  mutate(JobSatisfaction = ifelse(satjob == "Very Satisfied" | satjob == "Mod. Satisfied", "Satisfied", 
+                            ifelse(satjob == "A Little Dissat" | satjob == "Very Dissatisfied", 
+                                   "Dissatisfied", NA)))
+```
+
+In order to visualize and explore the data, we construct side-by-side boxplots of the years in question and the age of those surveyed whose response falls under the category of "Dissatisfied" with the work they do. 
+
+```{r}
+row_to_keep = which(!(gss$age == 'NA'))
+gss_n = gss[row_to_keep,]
+dissat87 <- table(gss_n$JobSatisfaction == 'Dissatisfied' & gss_n$year == "1987")[2]
+dissat12 <- table(gss_n$JobSatisfaction == 'Dissatisfied' & gss_n$year == "2012")[2]
+id <- rep(c('1987','2012'), c(dissat87, dissat12))
+results_87 <- gss_n %>%
+  filter(JobSatisfaction == "Dissatisfied", year == "1987")
+results_12 <- gss_n %>%
+  filter(JobSatisfaction == "Dissatisfied", year == "2012")
+d <- data.frame(y = c(results_87$age, results_12$age), id = factor(id))
+boxplot(y ~ id, data = d)
+```
+
+From the side-by-side box plots, we observe that the median age of the disgruntled workforce in the year 2012 is around 40, which is higher than the median age of roughly 35 of the disgruntled workforce in the year 1987. In addition, both distributions from the two different years appear to be right-skewed, with the 2012 distribution being more skewed than the 1987 distribution. Combining the right-skewness and the fact that the median splits the distribution into half, the higher median age from 2012 implies that there is a smaller percentage of the dissatisfied workforce whose age is between 18 and 35 in 2012 than in 1987. 
+
+```{r}
+gss87 <- gss %>%
+  filter(JobSatisfaction == "Dissatisfied", year == "1987") 
+gss87 %>%
+  summarise(min_87 = min(age, na.rm = TRUE), median_87 = median(age, na.rm = TRUE), 
+            max_87 = max(age, na.rm = TRUE), n = n())
+
+gss12 <- gss %>%
+  filter(JobSatisfaction == "Dissatisfied", year == "2012") 
+gss12 %>%
+  summarise(min_12 = min(age, na.rm = TRUE), median_12 = median(age, na.rm = TRUE), 
+            max_12 = max(age, na.rm = TRUE), n = n())
+```
+
+Indeed, the summary statistics confirm our observations from the boxplots. The median age from 1987 is 34, which falls under the age range 18 to 35 that we are interested in, while the median age from 2012 is 39 and outside this age range. Hence, we know that more than 50% of the population in 1987 who are dissatisfied with their jobs falls under the age range of 18 to 35 while less than 50% of this population of disgruntled employees falls under the age range of 18 to 35 in the year 2012. This can be rephrased as the proportion of young professionals who are unhappy with the work they do takes up 50% or more of the total disgruntled workforce in 1987 and is thus higher than the proportion of unhappy young professionals in 2012 who takes up less than 50% of the total disgruntled workforce. 
+
+The boxplots and summary statistics provide some insight into the changes in the landscape of the disgruntled workforce. There are a few reasons that can explain the above results. For example, the changes could have come from an increase in the number of people who are older than 35 who find their work unsatisfying in 2012. This leads to a rise in the mean and median age of the disgruntled workforce in 2012 while causing the proportion of unhappy employees who are 35 and younger to fall below 50%. Therefore, these results are not indicative of whether or not fewer young people are dissatisfied with their jobs in 2012 compared to 1987. In order to explore this aspect, we focus our attention on the question of whether among the population of young professionals, there are more or fewer members who are dissatisfied with their work. This is the same as exploring the change in the proportion of dissatisfied employees in the population of 18yo-to-35yo workforce between the two years 1987 and 2012. We will address this question using inference in the following section. 
+* * *
+
+## Part 4: Inference
+We first create two new dataframes `YoungProf87` and `YoungProf12` which contain only the information pertain to people below or equal to the age of 35 in the years 1987 and 2012. 
+
+```{r}
+YoungProf87 <- gss %>%
+  filter(age <= 35, year == "1987")
+
+YoungProf12 <- gss %>%
+  filter(age <= 35, year == "2012")
+```
+
+We check the conditions that are required in order to apply the Central Limit Theorem to calculate the confidence interval and we observe that:
+
+1. The data collected by GSS are random samples and independent within groups and the total number of samples is certainly less than 10% of the total population in the US. As a result, the sampled young professionals are independent of each other in the year 1987 and the same applies to the year 2012. Also, the young professionals between the age of 18 and 35 from the year 1987 sample are independent from those from the year 2012 sample since there is a 25-year difference between 1987 and 2012 (i.e the oldest of the young professionals sampled from the year 2012 would have been 10 and thus do not belong to the group of young professionals sampled in the year 1987).  
+2. For this condition, we calculate the sampled proportions of young professionals from both years 1987 and 2012 who find their jobs unsatisfying, which turns out to be:
+
+```{r}
+total87 <- (table(YoungProf87$JobSatisfaction)[1] + table(YoungProf87$JobSatisfaction)[2])
+p_dissat87 <- table(YoungProf87$JobSatisfaction == "Dissatisfied")[2]/total87
+total12 <- (table(YoungProf12$JobSatisfaction)[1] + table(YoungProf12$JobSatisfaction)[2])
+p_dissat12 <- table(YoungProf12$JobSatisfaction == "Dissatisfied")[2]/total12
+```
+
+Note that we ignore the N/A responses of individuals who did not state whether they find their jobs satisfying or unsatisfying. From these proportions, we have that the sampled number of dissatisfied young employees (successes) and the sampled number of satisfied young employees (failures) from the year 1987 are respectively:  
+
+(i) successes: 
+```{r}
+p_dissat87*total87
+```
+
+(ii) failures:
+```{r}
+(1-p_dissat87)*total87
+```
+
+Likewise, the sampled number of dissatisfied young employees (successes) and the sampled number of satisfied young employees (failures) from the year 2012 are respectively:  
+
+(i) successes: 
+```{r}
+p_dissat12*total12
+```
+
+(ii) failures:
+```{r}
+(1-p_dissat12)*total12
+```
+
+The data for the years 1987 and 2012 satisfy the condition for the sample size/ skew where at least 10 sampled successes and 10 sampled failures are required. We can therefore assume that the sampling distribution of the difference between the two sampled proportions is nearly normal. 
+
+We first construct the confidence interval for the difference between the proportions of young professionals who are unhappy with their jobs in 1987 and in 2012. We hope the confidence interval will tell us whether there is any statistically significant difference between these two proportions. Using the function `inference` as before, we have:
+
+```{r}
+inference(y = JobSatisfaction, x = as.factor(year), data = rbind(YoungProf87, YoungProf12), 
+          statistic = "proportion", type = "ci", method = "theoretical", success = "Dissatisfied")
+```
+
+We are thus 95% confident that within the population of young employed Americans, the proportions of those who are unhappy with their current employment in 1987 and 2012 differ by 4% to 13%. In particular, the percentage of young employees in the US who are dissastisfied with their jobs in 2012 has dropped from that in 1987. 
+
+Next, we perform hypothesis testing to compare the two proportions of disgruntled young professionals from 1987 and 2012. We want to find out if young professionals in 2012 are less likely to find themselves dissatisfied with their employment than young professionals in 1987. For this problem, we present the following hypothesis, where we let $p_{year}$ be the proportion of young professionals who are unhappy with their jobs in that particular $year$:
+
+$H_0: p_{1987} - p_{2012} = 0$;  
+$H_A: p_{1987} - p_{2012} \ne 0$ 
+
+
+We check the conditions that are required for hypothesis tests and we observe that:
+
+1. The condition for independence within groups and between groups is satisfied since this is the same as the first condition required by the Central Limit Theorem to calculate the confidence interval.  
+2. For this condition, we calculate the pooled proportion of young professionals from both years 1987 and 2012 who find their jobs unsatisfying, which turns out to be:
+
+```{r}
+dissat87 <- table(YoungProf87$JobSatisfaction == "Dissatisfied")[2]
+dissat12 <- table(YoungProf12$JobSatisfaction == "Dissatisfied")[2]
+pooled <- (dissat87+dissat12)/(total87+total12)
+```
+
+From the pooled proportion, we have that the expected number of dissatisfied young employees (successes) and the expected number of satisfied young employees (failures) from the year 1987 are respectively: 
+
+(i) successes: 
+```{r}
+pooled*total87
+```
+
+(ii) failures:
+```{r}
+(1-pooled)*total87
+```
+
+Likewise, the expected number of dissatisfied young employees (successes) and the expected number of satisfied young employees (failures) from the year 2012 are respectively:  
+(i) successes: 
+```{r}
+pooled*total12
+```
+
+(ii) failures:
+```{r}
+(1-pooled)*total12
+```
+
+The data for the years 1987 and 2012 satisfy the condition for the sample size/ skew where at least 10 expected successes and 10 expected failures are required. We can therefore assume that the sampling distribution of the difference between the two sample proportions is nearly normal. 
+
+```{r}
+inference(y = JobSatisfaction, x = as.factor(year), data = rbind(YoungProf87, YoungProf12), 
+          statistic = "proportion", type = "ht", null = 0, alternative = "twosided",
+          method = "theoretical", success = "Dissatisfied")
+```
+
+Using the `inference` function, the hypothesis test yields a p-value of $0.0003$, which is less than the significance level of $\alpha = 0.05$. Hence, the sample data provides convincing evidence that there is a difference between the two proportions of dissatisfied employees within the population of young professionals from the years 1987 and 2012. More specifically, young professionals in 2012 are less likely to be unhappy with their jobs than those from 25 years ago. The hypothesis test is thus consistent with the confidence interval in its conclusion regarding the difference between the two proportions. 
+
+It is important to note that regardless of the results, this study does not negate the existence of the problems faced by millennials as well as make any claim that these problems bear a lesser degree of gravity nowadays compared to 25 years ago. The study only establishes that there is convincing evidence gathered from the GSS data that shows that the proportion of young professionals who are dissatisfied with their jobs in the year 2012 is less than that of the year 1987. 
